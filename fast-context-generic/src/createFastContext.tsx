@@ -7,6 +7,13 @@ import React, {
 } from "react";
 
 export default function createFastContext<Store>(initialState: Store) {
+  let subscribers = new Set<(data: Partial<Store>) => void>();
+
+  function subscribe(callback: (data: Partial<Store>) => void) {
+    subscribers.add(callback);
+    return () => subscribers.delete(callback);
+  }
+
   function useStoreData(): {
     get: () => Store;
     set: (value: Partial<Store>) => void;
@@ -16,17 +23,17 @@ export default function createFastContext<Store>(initialState: Store) {
 
     const get = useCallback(() => store.current, []);
 
-    const subscribers = useRef(new Set<() => void>());
+    // const subscribers = useRef(new Set<() => void>());
 
     const set = useCallback((value: Partial<Store>) => {
       store.current = { ...store.current, ...value };
-      subscribers.current.forEach((callback) => callback());
+      subscribers.forEach((callback) => callback(store.current));
     }, []);
 
-    const subscribe = useCallback((callback: () => void) => {
-      subscribers.current.add(callback);
-      return () => subscribers.current.delete(callback);
-    }, []);
+    // const subscribe = useCallback((callback: () => void) => {
+    //   subscribers.current.add(callback);
+    //   return () => subscribers.current.delete(callback);
+    // }, []);
 
     return {
       get,
@@ -58,11 +65,13 @@ export default function createFastContext<Store>(initialState: Store) {
     const state = useSyncExternalStore(
       store.subscribe,
       () => selector(store.get()),
-      () => selector(initialState),
+      () => selector(initialState)
     );
 
     return [state, store.set];
   }
+
+  useStore.subscribe = subscribe;
 
   return {
     Provider,
