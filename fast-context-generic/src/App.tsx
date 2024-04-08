@@ -1,8 +1,8 @@
 import createFastContext from "./createFastContext";
 
-const { Provider, useStore } = createFastContext({ first: "", last: "" });
+const {  useStore } = createFastContext({ first: "", last: "" });
 
-const { Provider: Provider2, useStore: useStore2 } = createFastContext({
+const {  useStore: useStore2 } = createFastContext({
   age: 0,
 });
 
@@ -16,6 +16,8 @@ useStore2.subscribe((data) => {
 
 const TextInput = ({ value }: { value: "first" | "last" }) => {
   const [fieldValue, setStore] = useStore((store) => store[value]);
+
+  console.log("wtf!!!", fieldValue)
   return (
     <div className="field">
       {value}:{" "}
@@ -84,14 +86,10 @@ const ContentContainer = () => {
 
 function App() {
   return (
-    <Provider>
-      <Provider2>
         <div className="container">
           <h5>App</h5>
           <ContentContainer />
         </div>
-      </Provider2>
-    </Provider>
   );
 }
 
