@@ -6,6 +6,8 @@ import React, {
   useSyncExternalStore,
 } from "react";
 
+type CallbackSet<T> = ((store: T) => Partial<T>) | Partial<T>
+
 export default function createFastContext<Store>(initialState: Store) {
   let subscribers = new Set<(data: Partial<Store>) => void>();
 
@@ -17,14 +19,14 @@ export default function createFastContext<Store>(initialState: Store) {
 
   const get = () => store
 
-  const set = (value: Partial<Store>) => {
-    store = { ...store, ...value };
+  const set = (value: CallbackSet<Store>) => {
+    store = { ...store, ...(typeof value === 'function' ? value(store) : value) };
     subscribers.forEach((callback) => callback(store));
   }
 
   function useStoreData(): {
     get: () => Store;
-    set: (value: Partial<Store>) => void;
+    set: (value: CallbackSet<Store>) => void;
     subscribe: (callback: () => void) => () => void;
   } {
 
@@ -35,7 +37,6 @@ export default function createFastContext<Store>(initialState: Store) {
     };
   }
 
-  type UseStoreDataReturnType = ReturnType<typeof useStoreData>;
 
   function useStore<SelectorOutput>(
     selector: (store: Store) => SelectorOutput
@@ -51,8 +52,7 @@ export default function createFastContext<Store>(initialState: Store) {
   }
 
   useStore.subscribe = subscribe;
+  useStore.dispatch = set
 
-  return {
-    useStore,
-  };
+  return useStore
 }
